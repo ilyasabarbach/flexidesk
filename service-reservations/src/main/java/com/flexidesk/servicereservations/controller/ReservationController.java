@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 import java.util.List;
 
 @RestController
@@ -21,16 +22,16 @@ public class ReservationController {
     @PostMapping
     public ResponseEntity<ReservationResponse> createReservation(
             @RequestBody ReservationRequest request,
-            @RequestParam("userId") Long userId
+            @RequestHeader("X-User-Id") Long userId
     ) {
         ReservationResponse response = reservationService.createReservation(request, userId);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
 
-    @GetMapping("/user/{userId}")
+    @GetMapping("/my-reservations")
     public ResponseEntity<List<ReservationResponse>> getReservationsForUser(
-            @PathVariable("userId") Long userId
+            @RequestHeader("X-User-Id") Long userId
     ) {
         List<ReservationResponse> responses = reservationService.getReservationsByUserId(userId);
         return ResponseEntity.ok(responses);
