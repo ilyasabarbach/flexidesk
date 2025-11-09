@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import authService from "../services/authService";
-import { useNavigate } from "react-router-dom"; // Notre service a déjà la fonction 'register'
+import { useNavigate } from "react-router-dom";
 
 /**
  * Page de connexion ET d'inscription
@@ -21,7 +21,8 @@ const LoginPage = () => {
 
       if (response.data.token) {
         localStorage.setItem("userToken", response.data.token);
-        navigate("/");
+        // On force le rechargement de la page pour que ProtectedRoute lise le nouveau localStorage
+        window.location.href = "/";
       }
     } catch (error) {
       setMessage("Erreur Login: Nom d'utilisateur ou mot de passe incorrect.");
@@ -43,7 +44,7 @@ const LoginPage = () => {
       console.log(response.data); // Affiche le message de succès du backend
     } catch (error) {
       // Gère les erreurs (ex: utilisateur existe déjà)
-      setMessage("Erreur InsMcription: Cet utilisateur existe peut-être déjà.");
+      setMessage("Erreur Inscription: Cet utilisateur existe peut-être déjà.");
       console.error("Erreur d'inscription:", error);
     }
   };
@@ -74,12 +75,10 @@ const LoginPage = () => {
 
         {/* NOUVEAUX BOUTONS */}
         <div style={{ marginTop: "10px" }}>
-          {/* CORRECTION ICI: type="button" */}
           <button type="button" onClick={handleLogin}>
             Se connecter
           </button>
 
-          {/* Le bouton Register appelle handleRegister */}
           <button
             type="button"
             onClick={handleRegister}

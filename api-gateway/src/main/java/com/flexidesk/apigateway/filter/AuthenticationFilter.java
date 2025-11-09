@@ -47,12 +47,18 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 try {
                     jwtUtil.validateToken(token);
 
+                    // 5. EXTRAIRE LES DONNÉES
+                    // Assurez-vous que ces lignes sont bien là !
                     Claims claims = jwtUtil.extractAllClaims(token);
                     Long userId = claims.get("userId", Long.class);
+                    String role = claims.get("role", String.class);
 
+                    // 6. Ajouter les en-têtes pour les services en aval
+                    // Assurez-vous que ces lignes sont bien là !
                     exchange.getRequest()
                             .mutate()
-                            .header("X-User-Id", String.valueOf(userId));
+                            .header("X-User-Id", String.valueOf(userId))
+                            .header("X-User-Roles", role);
 
                 } catch (Exception e) {
                     return onError(exchange, HttpStatus.UNAUTHORIZED);
