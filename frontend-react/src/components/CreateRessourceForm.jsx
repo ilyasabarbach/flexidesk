@@ -1,16 +1,5 @@
 import React, { useState } from "react";
 import ressourceService from "../services/ressourceService";
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Alert,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-} from "@mui/material";
 
 const CreateRessourceForm = ({ onRessourceCreated }) => {
   const [nom, setNom] = useState("");
@@ -36,59 +25,92 @@ const CreateRessourceForm = ({ onRessourceCreated }) => {
   };
 
   return (
-    <Box
-      component="form"
+    // Formulaire stylisé : fond vert clair, bordure, ombre
+    <form
       onSubmit={handleSubmit}
-      sx={{ my: 2, p: 3, border: "2px solid green", borderRadius: 2 }}
+      className="p-6 my-4 bg-green-50 border-2 border-green-200 rounded-lg shadow-sm"
     >
-      <Typography variant="h5" gutterBottom>
-        Panneau Admin
-      </Typography>
-      <Typography variant="h6" gutterBottom>
-        Créer une Ressource
-      </Typography>
+      <h3 className="text-xl font-semibold text-green-800">
+        Panneau Admin : Créer une Ressource
+      </h3>
 
+      {/* Alerte d'erreur */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <div className="p-3 mt-3 text-red-800 bg-red-100 rounded-md">
           {error}
-        </Alert>
+        </div>
       )}
 
-      <TextField
-        label="Nom de la ressource"
-        fullWidth
-        value={nom}
-        onChange={(e) => setNom(e.target.value)}
-        required
-        sx={{ mb: 2 }}
-      />
-      <FormControl fullWidth sx={{ mb: 2 }}>
-        <InputLabel id="type-select-label">Type</InputLabel>
-        <Select
-          labelId="type-select-label"
-          label="Type"
-          value={type}
-          onChange={(e) => setType(e.target.value)}
+      {/* Grille pour les champs du formulaire */}
+      <div className="grid grid-cols-1 gap-4 mt-4 md:grid-cols-3">
+        {/* Champ Nom */}
+        <div>
+          <label
+            htmlFor="nom"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Nom de la ressource
+          </label>
+          <input
+            type="text"
+            id="nom"
+            value={nom}
+            onChange={(e) => setNom(e.target.value)}
+            required
+            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        {/* Champ Type */}
+        <div>
+          <label
+            htmlFor="type"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Type
+          </label>
+          <select
+            id="type"
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="BUREAU">Bureau</option>
+            <option value="SALLE_REUNION">Salle de réunion</option>
+            <option value="PARKING">Parking</option>
+          </select>
+        </div>
+
+        {/* Champ Capacité */}
+        <div>
+          <label
+            htmlFor="capacite"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Capacité
+          </label>
+          <input
+            type="number"
+            id="capacite"
+            value={capacite}
+            onChange={(e) => setCapacite(parseInt(e.target.value))}
+            min="1"
+            required
+            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+      </div>
+
+      {/* Bouton de soumission */}
+      <div className="mt-6 text-right">
+        <button
+          type="submit"
+          className="px-6 py-2 font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
         >
-          <MenuItem value="BUREAU">Bureau</MenuItem>
-          <MenuItem value="SALLE_REUNION">Salle de réunion</MenuItem>
-          <MenuItem value="PARKING">Parking</MenuItem>
-        </Select>
-      </FormControl>
-      <TextField
-        label="Capacité"
-        type="number"
-        fullWidth
-        value={capacite}
-        onChange={(e) => setCapacite(parseInt(e.target.value))}
-        required
-        InputProps={{ inputProps: { min: 1 } }}
-        sx={{ mb: 2 }}
-      />
-      <Button type="submit" variant="contained" color="success">
-        Créer
-      </Button>
-    </Box>
+          Créer
+        </button>
+      </div>
+    </form>
   );
 };
 
