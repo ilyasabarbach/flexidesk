@@ -1,4 +1,4 @@
-
+# --- Service Ressources ---
 apiVersion: v1
 kind: Service
 metadata:
@@ -30,9 +30,12 @@ spec:
         image: registry.gitlab.com/devops2255146/flexidesk-project/service-ressources:TAG_PLACEHOLDER
         ports:
         - containerPort: 8081
-        imagePullSecrets:
+      
+      # CORRECTION ICI: L'indentation est au niveau de "spec"
+      imagePullSecrets:
       - name: gitlab-registry-creds
 ---
+# --- Service Utilisateurs ---
 apiVersion: v1
 kind: Service
 metadata:
@@ -64,9 +67,12 @@ spec:
         image: registry.gitlab.com/devops2255146/flexidesk-project/service-utilisateurs:TAG_PLACEHOLDER
         ports:
         - containerPort: 8082
-        imagePullSecrets:
+      
+      # CORRECTION ICI: L'indentation est au niveau de "spec"
+      imagePullSecrets:
       - name: gitlab-registry-creds
 ---
+# --- Service Réservations ---
 apiVersion: v1
 kind: Service
 metadata:
@@ -98,9 +104,12 @@ spec:
         image: registry.gitlab.com/devops2255146/flexidesk-project/service-reservations:TAG_PLACEHOLDER
         ports:
         - containerPort: 8083
-        imagePullSecrets:
+      
+      # CORRECTION ICI: L'indentation est au niveau de "spec"
+      imagePullSecrets:
       - name: gitlab-registry-creds
 ---
+# --- API Gateway ---
 apiVersion: v1
 kind: Service
 metadata:
@@ -132,9 +141,12 @@ spec:
         image: registry.gitlab.com/devops2255146/flexidesk-project/api-gateway:TAG_PLACEHOLDER
         ports:
         - containerPort: 8080
-        imagePullSecrets:
+      
+      # CORRECTION ICI: L'indentation est au niveau de "spec"
+      imagePullSecrets:
       - name: gitlab-registry-creds
 ---
+# --- Frontend React ---
 apiVersion: v1
 kind: Service
 metadata:
@@ -144,8 +156,8 @@ spec:
     app: frontend-react
   ports:
     - protocol: TCP
-      port: 80 # Le service K8s expose le port 80
-      targetPort: 80 # Le conteneur Nginx écoute sur le port 80
+      port: 80
+      targetPort: 80
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -166,5 +178,7 @@ spec:
         image: registry.gitlab.com/devops2255146/flexidesk-project/frontend-react:TAG_PLACEHOLDER
         ports:
         - containerPort: 80
-        imagePullSecrets:
+      
+      # CORRECTION ICI: L'indentation est au niveau de "spec"
+      imagePullSecrets:
       - name: gitlab-registry-creds
