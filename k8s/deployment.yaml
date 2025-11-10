@@ -30,6 +30,8 @@ spec:
         image: registry.gitlab.com/devops2255146/flexidesk-project/service-ressources:TAG_PLACEHOLDER
         ports:
         - containerPort: 8081
+        imagePullSecrets:
+      - name: gitlab-registry-creds
 ---
 apiVersion: v1
 kind: Service
@@ -62,6 +64,8 @@ spec:
         image: registry.gitlab.com/devops2255146/flexidesk-project/service-utilisateurs:TAG_PLACEHOLDER
         ports:
         - containerPort: 8082
+        imagePullSecrets:
+      - name: gitlab-registry-creds
 ---
 apiVersion: v1
 kind: Service
@@ -94,6 +98,8 @@ spec:
         image: registry.gitlab.com/devops2255146/flexidesk-project/service-reservations:TAG_PLACEHOLDER
         ports:
         - containerPort: 8083
+        imagePullSecrets:
+      - name: gitlab-registry-creds
 ---
 apiVersion: v1
 kind: Service
@@ -126,6 +132,8 @@ spec:
         image: registry.gitlab.com/devops2255146/flexidesk-project/api-gateway:TAG_PLACEHOLDER
         ports:
         - containerPort: 8080
+        imagePullSecrets:
+      - name: gitlab-registry-creds
 ---
 apiVersion: v1
 kind: Service
@@ -158,3 +166,5 @@ spec:
         image: registry.gitlab.com/devops2255146/flexidesk-project/frontend-react:TAG_PLACEHOLDER
         ports:
         - containerPort: 80
+        imagePullSecrets:
+      - name: gitlab-registry-creds

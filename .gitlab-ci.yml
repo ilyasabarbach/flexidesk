@@ -78,31 +78,45 @@ build-frontend-react:
 #
 deploy-to-k8s:
   stage: deploy
-  image: alpine:latest # On utilise une image alpine légère
-  
-  # Cette tâche s'exécute seulement si la branche est "develop"
+  image: alpine:latest
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
       
-  # Installation des outils nécessaires (ssh, scp, kubectl)
   before_script:
     - apk add --no-cache openssh-client rsync bash sed
     - apk add --no-cache kubectl
-
-    # Configuration de la clé SSH (celle de la variable GitLab)
     - chmod 600 $SSH_PRIVATE_KEY
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    # Ajoute la clé de votre serveur aux "hôtes connus"
     - ssh-keyscan -H $AWS_SERVER_IP >> ~/.ssh/known_hosts
 
   script:
+    - echo "Déploiement sur K3s..."
+    
+    # --- Étape A: Remplacer les placeholders (inchangé) ---
+    - sed -i "s|REGISTRE_PLACEHOLDER|$IMAGE_REGISTRY|g" k8s/deployment.yaml
+    - sed -i "s|TAG_PLACEHOLDER|$IMAGE_TAG|g" k8s/deployment.yaml
+    - sed -i "s|IP_PLACEHOLDER|$AWS_SERVER_IP|g" k8s/ingress.yaml
+    
+    # --- Étape B: Copier les fichiers (inchangé) ---
     - scp -i $SSH_PRIVATE_KEY -r ./k8s $SSH_USER_IP:~/
+    
+    # --- Étape C: Se connecter et déployer ---
     - |
       ssh -i $SSH_PRIVATE_KEY $SSH_USER_IP << EOF
         
-        # LIGNES CORRIGÉES
+        echo "1. Création du secret pour le registre GitLab..."
+        # On supprime l'ancien secret (s'il existe) et on crée le nouveau
+        sudo k3s kubectl delete secret gitlab-registry-creds --ignore-not-found
+        sudo k3s kubectl create secret docker-registry gitlab-registry-creds \
+          --docker-server="$CI_REGISTRY" \
+          --docker-username="$DEPLOY_REGISTRY_USER" \
+          --docker-password="$DEPLOY_REGISTRY_PASS"
+          
+        echo "2. Application des déploiements..."
         sudo k3s kubectl apply -f k8s/deployment.yaml
+        
+        echo "3. Application de l'ingress..."
         sudo k3s kubectl apply -f k8s/ingress.yaml
         
         echo "Déploiement terminé !"
