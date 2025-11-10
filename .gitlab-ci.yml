@@ -86,7 +86,6 @@ deploy-to-k8s:
     - echo "Déploiement sur K3s..."
     
     # --- Étape A: Remplacer les placeholders ---
-    # Utilisation de '@' comme délimiteur pour sed, c'est plus sûr
     - sed -i "s@REGISTRE_PLACEHOLDER@$IMAGE_REGISTRY@g" k8s/deployment.yaml
     - sed -i "s@TAG_PLACEHOLDER@$IMAGE_TAG@g" k8s/deployment.yaml
     
@@ -105,7 +104,7 @@ deploy-to-k8s:
           --docker-password="$DEPLOY_REGISTRY_PASS"
           
         echo "2. Application des configs (Issuer, Redirect)..."
-        # CES LIGNES MANQUAIENT !
+        # CES LIGNES SONT LES PLUS IMPORTANTES
         sudo k3s kubectl apply -f k8s/issuer.yaml
         sudo k3s kubectl apply -f k8s/redirect-https.yaml
 
