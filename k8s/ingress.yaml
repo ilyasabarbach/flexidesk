@@ -2,21 +2,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: flexidesk-ingress
-  annotations:
-    # Dit à K8s d'utiliser notre 'ClusterIssuer'
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    # Dit à Traefik de forcer la redirection HTTPS
-    traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
-    traefik.ingress.kubernetes.io/router.middlewares: "default-redirect-https@kubernetescrd"
 spec:
-  tls:
-  - hosts:
-    - ailyes.com
-    - www.ailyes.com
-    secretName: ailyes-com-tls
-  
   rules:
-  # Règle pour ailyes.com
   - host: ailyes.com
     http:
       paths:
@@ -35,7 +22,6 @@ spec:
             port:
               number: 80
               
-  # Règle pour www.ailyes.com (dupliquée manuellement)
   - host: www.ailyes.com
     http:
       paths:
