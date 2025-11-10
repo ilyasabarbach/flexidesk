@@ -1,40 +1,45 @@
-
+# 1. Ajout de la nouvelle étape "deploy"
 stages:
   - build-and-push
+  - deploy # Nouvelle étape
 
 variables:
-  
+  # L'URL de votre registre (vous l'avez déjà)
   IMAGE_REGISTRY: "registry.gitlab.com/devops2255146/flexidesk-project"
-  
+  # Le tag (inchangé)
   IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  # L'IP de votre serveur (pour le remplacement)
+  # Remplacez par votre IP publique AWS
+  AWS_SERVER_IP: "13.51.121.181" 
 
-
+# ... (votre 'before_script' pour docker login reste le même) ...
 before_script:
   - echo "Logging in to GitLab Container Registry..."
   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
 
+#
+# --- TOUTES VOS 5 TÂCHES "build-..." RESTENT EXACTEMENT LES MÊMES ---
+# (build-service-ressources, build-service-utilisateurs, etc.)
+# ...
+#
 
+# --- Tâche 1 : Build Service-Ressources ---
 build-service-ressources:
   stage: build-and-push
-  
   image: docker:24-git
   services:
     - docker:24-dind
   script:
-    - echo "Building service-ressources..."
-   
     - docker build -t $IMAGE_REGISTRY/service-ressources:$IMAGE_TAG -f service-ressources/Dockerfile .
-    
     - docker push $IMAGE_REGISTRY/service-ressources:$IMAGE_TAG
 
-
+# --- Tâche 2 : Build Service-Utilisateurs ---
 build-service-utilisateurs:
   stage: build-and-push
   image: docker:24-git
   services:
     - docker:24-dind
   script:
-    - echo "Building service-utilisateurs..."
     - docker build -t $IMAGE_REGISTRY/service-utilisateurs:$IMAGE_TAG -f service-utilisateurs/Dockerfile .
     - docker push $IMAGE_REGISTRY/service-utilisateurs:$IMAGE_TAG
 
@@ -45,7 +50,6 @@ build-service-reservations:
   services:
     - docker:24-dind
   script:
-    - echo "Building service-reservations..."
     - docker build -t $IMAGE_REGISTRY/service-reservations:$IMAGE_TAG -f service-reservations/Dockerfile .
     - docker push $IMAGE_REGISTRY/service-reservations:$IMAGE_TAG
 
@@ -56,16 +60,71 @@ build-api-gateway:
   services:
     - docker:24-dind
   script:
-    - echo "Building api-gateway..."
     - docker build -t $IMAGE_REGISTRY/api-gateway:$IMAGE_TAG -f api-gateway/Dockerfile .
     - docker push $IMAGE_REGISTRY/api-gateway:$IMAGE_TAG
 
+# --- Tâche 5 : Build Frontend-React ---
 build-frontend-react:
   stage: build-and-push
   image: docker:24-git
   services:
     - docker:24-dind
   script:
-    - echo "Building frontend-react..."
     - docker build -t $IMAGE_REGISTRY/frontend-react:$IMAGE_TAG -f frontend-react/Dockerfile .
     - docker push $IMAGE_REGISTRY/frontend-react:$IMAGE_TAG
+
+#
+# --- NOUVELLE TÂCHE DE DÉPLOIEMENT ---
+#
+deploy-to-k8s:
+  stage: deploy
+  image: alpine:latest # On utilise une image alpine légère
+  
+  # Cette tâche s'exécute seulement si la branche est "develop"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+      
+  # Installation des outils nécessaires (ssh, scp, kubectl)
+  before_script:
+    - apk add --no-cache openssh-client rsync bash sed
+    - apk add --no-cache kubectl
+
+    # Configuration de la clé SSH (celle de la variable GitLab)
+    - chmod 600 $SSH_PRIVATE_KEY
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    # Ajoute la clé de votre serveur aux "hôtes connus"
+    - ssh-keyscan -H $AWS_SERVER_IP >> ~/.ssh/known_hosts
+
+  script:
+    - echo "Déploiement sur K3s..."
+    
+    # --- Étape A: Remplacer les placeholders dans les fichiers .yaml ---
+    # On remplace les variables dans nos fichiers de déploiement
+    
+    # 1. Remplacer le REGISTRE (ex: registry.gitlab.com/...)
+    - sed -i "s|REGISTRE_PLACEHOLDER|$IMAGE_REGISTRY|g" k8s/deployment.yaml
+    
+    # 2. Remplacer le TAG (ex: a1b2c3d)
+    - sed -i "s|TAG_PLACEHOLDER|$IMAGE_TAG|g" k8s/deployment.yaml
+    
+    # 3. Remplacer l'IP dans l'ingress (on le fait ici pour être sûr)
+    - sed -i "s|IP_PLACEHOLDER|$AWS_SERVER_IP|g" k8s/ingress.yaml
+    
+    # --- Étape B: Copier les fichiers sur le serveur ---
+    - echo "Copie des manifestes K8s vers le serveur..."
+    - scp -i $SSH_PRIVATE_KEY -r ./k8s $SSH_USER_IP:~/
+    
+    # --- Étape C: Se connecter au serveur et lancer le déploiement ---
+    - echo "Application des manifestes sur le cluster K3s..."
+    - |
+      ssh -i $SSH_PRIVATE_KEY $SSH_USER_IP << EOF
+        
+        # 1. On applique le déploiement (K8s va voir les nouveaux tags)
+        k3s kubectl apply -f k8s/deployment.yaml
+        
+        # 2. On applique l'ingress (avec votre domaine ailyes.com)
+        k3s kubectl apply -f k8s/ingress.yaml
+        
+        echo "Déploiement terminé !"
+      EOF
