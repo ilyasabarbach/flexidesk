@@ -97,34 +97,13 @@ deploy-to-k8s:
     - ssh-keyscan -H $AWS_SERVER_IP >> ~/.ssh/known_hosts
 
   script:
-    - echo "Déploiement sur K3s..."
-    
-    # --- Étape A: Remplacer les placeholders dans les fichiers .yaml ---
-    # On remplace les variables dans nos fichiers de déploiement
-    
-    # 1. Remplacer le REGISTRE (ex: registry.gitlab.com/...)
-    - sed -i "s|REGISTRE_PLACEHOLDER|$IMAGE_REGISTRY|g" k8s/deployment.yaml
-    
-    # 2. Remplacer le TAG (ex: a1b2c3d)
-    - sed -i "s|TAG_PLACEHOLDER|$IMAGE_TAG|g" k8s/deployment.yaml
-    
-    # 3. Remplacer l'IP dans l'ingress (on le fait ici pour être sûr)
-    - sed -i "s|IP_PLACEHOLDER|$AWS_SERVER_IP|g" k8s/ingress.yaml
-    
-    # --- Étape B: Copier les fichiers sur le serveur ---
-    - echo "Copie des manifestes K8s vers le serveur..."
     - scp -i $SSH_PRIVATE_KEY -r ./k8s $SSH_USER_IP:~/
-    
-    # --- Étape C: Se connecter au serveur et lancer le déploiement ---
-    - echo "Application des manifestes sur le cluster K3s..."
     - |
       ssh -i $SSH_PRIVATE_KEY $SSH_USER_IP << EOF
         
-        # 1. On applique le déploiement (K8s va voir les nouveaux tags)
-        k3s kubectl apply -f k8s/deployment.yaml
-        
-        # 2. On applique l'ingress (avec votre domaine ailyes.com)
-        k3s kubectl apply -f k8s/ingress.yaml
+        # LIGNES CORRIGÉES
+        sudo k3s kubectl apply -f k8s/deployment.yaml
+        sudo k3s kubectl apply -f k8s/ingress.yaml
         
         echo "Déploiement terminé !"
       EOF
