@@ -96,7 +96,7 @@ deploy-to-k8s:
     # --- Étape A: Remplacer les placeholders (inchangé) ---
     - sed -i "s|REGISTRE_PLACEHOLDER|$IMAGE_REGISTRY|g" k8s/deployment.yaml
     - sed -i "s|TAG_PLACEHOLDER|$IMAGE_TAG|g" k8s/deployment.yaml
-    - sed -i "s|IP_PLACEHOLDER|$AWS_SERVER_IP|g" k8s/ingress.yaml
+    # Note : On n'a plus besoin de remplacer l'IP dans l'ingress.yaml
     
     # --- Étape B: Copier les fichiers (inchangé) ---
     - scp -i $SSH_PRIVATE_KEY -r ./k8s $SSH_USER_IP:~/
@@ -106,17 +106,20 @@ deploy-to-k8s:
       ssh -i $SSH_PRIVATE_KEY $SSH_USER_IP << EOF
         
         echo "1. Création du secret pour le registre GitLab..."
-        # On supprime l'ancien secret (s'il existe) et on crée le nouveau
+        sudo k3s kubectl apply -f k8s/redirect-https.yaml
+        sudo k3s kubectl apply -f k8s/issuer.yaml
+        
+        echo "2. Création du secret pour le registre GitLab..."
         sudo k3s kubectl delete secret gitlab-registry-creds --ignore-not-found
         sudo k3s kubectl create secret docker-registry gitlab-registry-creds \
           --docker-server="$CI_REGISTRY" \
           --docker-username="$DEPLOY_REGISTRY_USER" \
           --docker-password="$DEPLOY_REGISTRY_PASS"
           
-        echo "2. Application des déploiements..."
+        echo "3. Application des déploiements..."
         sudo k3s kubectl apply -f k8s/deployment.yaml
         
-        echo "3. Application de l'ingress..."
+        echo "4. Application de l'ingress..."
         sudo k3s kubectl apply -f k8s/ingress.yaml
         
         echo "Déploiement terminé !"
