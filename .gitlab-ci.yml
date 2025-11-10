@@ -60,7 +60,6 @@ build-api-gateway:
     - docker build -t $IMAGE_REGISTRY/api-gateway:$IMAGE_TAG -f api-gateway/Dockerfile .
     - docker push $IMAGE_REGISTRY/api-gateway:$IMAGE_TAG
 
-# --- Tâche 5 : Build Frontend-React ---
 build-frontend-react:
   stage: build-and-push
   image: docker:24-git
