@@ -1,0 +1,14 @@
+# Dossiers de build de tous les modules
+**/target/
+
+# Dossier node_modules du frontend
+frontend-react/node_modules/
+frontend-react/dist/
+
+# Fichiers IDE
+.idea/
+*.iml
+.DS_Store
+
+# Fichiers de log
+*.log
