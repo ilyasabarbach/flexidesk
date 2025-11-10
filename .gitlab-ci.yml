@@ -9,19 +9,11 @@ variables:
   # Le tag (inchangé)
   IMAGE_TAG: $CI_COMMIT_SHORT_SHA
   # L'IP de votre serveur (pour le remplacement)
-  # Remplacez par votre IP publique AWS
   AWS_SERVER_IP: "13.51.121.181" 
 
-# ... (votre 'before_script' pour docker login reste le même) ...
 before_script:
   - echo "Logging in to GitLab Container Registry..."
   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-
-#
-# --- TOUTES VOS 5 TÂCHES "build-..." RESTENT EXACTEMENT LES MÊMES ---
-# (build-service-ressources, build-service-utilisateurs, etc.)
-# ...
-#
 
 # --- Tâche 1 : Build Service-Ressources ---
 build-service-ressources:
@@ -74,7 +66,7 @@ build-frontend-react:
     - docker push $IMAGE_REGISTRY/frontend-react:$IMAGE_TAG
 
 #
-# --- NOUVELLE TÂCHE DE DÉPLOIEMENT ---
+# --- TÂCHE DE DÉPLOIEMENT CORRIGÉE ---
 #
 deploy-to-k8s:
   stage: deploy
@@ -93,10 +85,10 @@ deploy-to-k8s:
   script:
     - echo "Déploiement sur K3s..."
     
-    # --- Étape A: Remplacer les placeholders (inchangé) ---
-    - sed -i "s|REGISTRE_PLACEHOLDER|$IMAGE_REGISTRY|g" k8s/deployment.yaml
-    - sed -i "s|TAG_PLACEHOLDER|$IMAGE_TAG|g" k8s/deployment.yaml
-    # Note : On n'a plus besoin de remplacer l'IP dans l'ingress.yaml
+    # --- Étape A: Remplacer les placeholders ---
+    # Utilisation de '@' comme délimiteur pour sed, c'est plus sûr
+    - sed -i "s@REGISTRE_PLACEHOLDER@$IMAGE_REGISTRY@g" k8s/deployment.yaml
+    - sed -i "s@TAG_PLACEHOLDER@$IMAGE_TAG@g" k8s/deployment.yaml
     
     # --- Étape B: Copier les fichiers (inchangé) ---
     - scp -i $SSH_PRIVATE_KEY -r ./k8s $SSH_USER_IP:~/
@@ -106,16 +98,17 @@ deploy-to-k8s:
       ssh -i $SSH_PRIVATE_KEY $SSH_USER_IP << EOF
         
         echo "1. Création du secret pour le registre GitLab..."
-        sudo k3s kubectl apply -f k8s/redirect-https.yaml
-        sudo k3s kubectl apply -f k8s/issuer.yaml
-        
-        echo "2. Création du secret pour le registre GitLab..."
         sudo k3s kubectl delete secret gitlab-registry-creds --ignore-not-found
         sudo k3s kubectl create secret docker-registry gitlab-registry-creds \
           --docker-server="$CI_REGISTRY" \
           --docker-username="$DEPLOY_REGISTRY_USER" \
           --docker-password="$DEPLOY_REGISTRY_PASS"
           
+        echo "2. Application des configs (Issuer, Redirect)..."
+        # CES LIGNES MANQUAIENT !
+        sudo k3s kubectl apply -f k8s/issuer.yaml
+        sudo k3s kubectl apply -f k8s/redirect-https.yaml
+
         echo "3. Application des déploiements..."
         sudo k3s kubectl apply -f k8s/deployment.yaml
         
