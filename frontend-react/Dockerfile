@@ -21,7 +21,7 @@ FROM nginx:1.25-alpine
 
 # On copie les fichiers statiques (du dossier /dist) de l'étape de build...
 # ... vers le dossier HTML par défaut de Nginx
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/dist/. /usr/share/nginx/html/
 
 # (Optionnel) Copier une configuration Nginx personnalisée (pas nécessaire pour l'instant)
 # COPY nginx.conf /etc/nginx/conf.d/default.conf
