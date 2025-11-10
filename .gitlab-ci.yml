@@ -1,17 +1,21 @@
+# 1. Ajout de la nouvelle étape "deploy"
 stages:
   - build-and-push
   - deploy
 
 variables:
+  # L'URL de votre registre (vous l'avez déjà)
   IMAGE_REGISTRY: "registry.gitlab.com/devops2255146/flexidesk-project"
+  # Le tag (inchangé)
   IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  # L'IP de votre serveur (pour le remplacement)
   AWS_SERVER_IP: "13.51.121.181" 
 
 before_script:
   - echo "Logging in to GitLab Container Registry..."
   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
 
-# ... (Toutes les 5 tâches "build-..." restent identiques) ...
+# --- Tâche 1 : Build Service-Ressources ---
 build-service-ressources:
   stage: build-and-push
   image: docker:24-git
@@ -20,6 +24,8 @@ build-service-ressources:
   script:
     - docker build -t $IMAGE_REGISTRY/service-ressources:$IMAGE_TAG -f service-ressources/Dockerfile .
     - docker push $IMAGE_REGISTRY/service-ressources:$IMAGE_TAG
+
+# --- Tâche 2 : Build Service-Utilisateurs ---
 build-service-utilisateurs:
   stage: build-and-push
   image: docker:24-git
@@ -28,6 +34,8 @@ build-service-utilisateurs:
   script:
     - docker build -t $IMAGE_REGISTRY/service-utilisateurs:$IMAGE_TAG -f service-utilisateurs/Dockerfile .
     - docker push $IMAGE_REGISTRY/service-utilisateurs:$IMAGE_TAG
+
+# --- Tâche 3 : Build Service-Reservations ---
 build-service-reservations:
   stage: build-and-push
   image: docker:24-git
@@ -36,6 +44,8 @@ build-service-reservations:
   script:
     - docker build -t $IMAGE_REGISTRY/service-reservations:$IMAGE_TAG -f service-reservations/Dockerfile .
     - docker push $IMAGE_REGISTRY/service-reservations:$IMAGE_TAG
+
+# --- Tâche 4 : Build API-Gateway ---
 build-api-gateway:
   stage: build-and-push
   image: docker:24-git
@@ -44,6 +54,8 @@ build-api-gateway:
   script:
     - docker build -t $IMAGE_REGISTRY/api-gateway:$IMAGE_TAG -f api-gateway/Dockerfile .
     - docker push $IMAGE_REGISTRY/api-gateway:$IMAGE_TAG
+
+# --- Tâche 5 : Build Frontend-React ---
 build-frontend-react:
   stage: build-and-push
   image: docker:24-git
@@ -53,7 +65,9 @@ build-frontend-react:
     - docker build -t $IMAGE_REGISTRY/frontend-react:$IMAGE_TAG -f frontend-react/Dockerfile .
     - docker push $IMAGE_REGISTRY/frontend-react:$IMAGE_TAG
 
-# --- TÂCHE DE DÉPLOIEMENT SIMPLIFIÉE ---
+#
+# --- TÂCHE DE DÉPLOIEMENT (Mise à jour pour HTTPS) ---
+#
 deploy-to-k8s:
   stage: deploy
   image: alpine:latest
@@ -89,14 +103,17 @@ deploy-to-k8s:
           --docker-username="$DEPLOY_REGISTRY_USER" \
           --docker-password="$DEPLOY_REGISTRY_PASS"
           
-        echo "2. Application des déploiements..."
+        echo "2. Application des configs (Issuer)..."
+        # On applique le nouvel issuer
+        sudo k3s kubectl apply -f k8s/issuer.yaml
+
+        echo "3. Application des déploiements..."
         sudo k3s kubectl apply -f k8s/deployment.yaml
         
-        echo "3. Application de l'ingress (HTTP)..."
-        # On supprime les configs HTTPS avant
-        sudo k3s kubectl delete -f k8s/issuer.yaml --ignore-not-found
+        echo "4. Application de l'ingress (HTTPS)..."
+        # On supprime les anciennes configs (au cas où)
         sudo k3s kubectl delete -f k8s/redirect-https.yaml --ignore-not-found
-        # On applique le nouvel Ingress (HTTP simple)
+        # On applique le nouvel Ingress (qui demande le certificat)
         sudo k3s kubectl apply -f k8s/ingress.yaml
         
         echo "Déploiement terminé !"
