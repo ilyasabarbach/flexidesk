@@ -3,23 +3,22 @@ kind: Ingress
 metadata:
   name: flexidesk-ingress
   annotations:
-    # 1. Dit à K8s d'utiliser notre 'ClusterIssuer'
+    # Dit à K8s d'utiliser notre 'ClusterIssuer'
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    # 2. Dit à Traefik (le routeur de K3s) que le port 80 (web)
-    # ne fait que rediriger vers le port 443 (websecure)
+    # Dit à Traefik de forcer la redirection HTTPS
     traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
     traefik.ingress.kubernetes.io/router.middlewares: "default-redirect-https@kubernetescrd"
 spec:
-  # 3. On ajoute le bloc "tls" pour activer HTTPS
   tls:
   - hosts:
     - ailyes.com
     - www.ailyes.com
-    secretName: ailyes-com-tls # 'cert-manager' va créer ce secret pour nous
+    secretName: ailyes-com-tls
   
   rules:
+  # Règle pour ailyes.com
   - host: ailyes.com
-    http: &httpPaths
+    http:
       paths:
       - path: /api/v1
         pathType: Prefix
@@ -36,5 +35,21 @@ spec:
             port:
               number: 80
               
+  # Règle pour www.ailyes.com (dupliquée manuellement)
   - host: www.ailyes.com
-    http: *httpPaths # Astuce YAML pour réutiliser les mêmes règles
+    http:
+      paths:
+      - path: /api/v1
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 8080
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-react
+            port:
+              number: 80
