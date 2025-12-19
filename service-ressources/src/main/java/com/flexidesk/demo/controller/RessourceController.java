@@ -11,31 +11,25 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/ressources")
-public class RessourceController {
-
-
+public class RessourceController{
     private final RessourceRepository ressourceRepository;
-
-    public RessourceController(RessourceRepository ressourceRepository) {
+    public RessourceController(RessourceRepository ressourceRepository){
         this.ressourceRepository = ressourceRepository;
     }
-
     @GetMapping
-    public List<Ressource> getAllRessources() {
+    public List<Ressource> getAllRessources(){
         return ressourceRepository.findAll();
     }
-
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Ressource createRessource(@RequestBody Ressource ressource) {
-        return ressourceRepository.save(ressource);
+    public void createRessource(@RequestBody Ressource ressource){
+        ressourceRepository.save(ressource);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Ressource> getRessourceById(@PathVariable Long id) {
-        Optional<Ressource> ressource = ressourceRepository.findById(id);
+    public Optional<Ressource> getRessourceById(@PathVariable Long id){
+        return ressourceRepository.findById(id);
 
-        return ressource.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
 }
