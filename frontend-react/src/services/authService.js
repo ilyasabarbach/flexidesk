@@ -1,7 +1,9 @@
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
-const API_URL = "http://localhost:8080/api/v1/auth";
+//const API_URL = "http://localhost:8080/api/v1/auth";
+
+const API_URL = "https://ailyes.com/api/v1/auth";
 
 const login = (username, password) => {
   return axios.post(`${API_URL}/login`, {
