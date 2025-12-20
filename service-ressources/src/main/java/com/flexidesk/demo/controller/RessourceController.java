@@ -38,5 +38,24 @@ public class RessourceController {
     public Optional<Ressource> getRessourceById(@PathVariable("id") Long id){
         return ressourceRepository.findById(id);
     }
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Ressource updateRessource(@PathVariable("id") Long id, @RequestBody Ressource ressourceDetails) {
+        Ressource ressource = ressourceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ressource non trouvée"));
+
+        ressource.setNom(ressourceDetails.getNom());
+        ressource.setType(ressourceDetails.getType());
+        ressource.setCapacite(ressourceDetails.getCapacite());
+
+        return ressourceRepository.save(ressource);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
+    public void deleteRessource(@PathVariable("id") Long id) {
+        ressourceRepository.deleteById(id);
+    }
 
 }

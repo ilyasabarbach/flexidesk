@@ -88,6 +88,17 @@ public class ReservationService {
         Reservation savedReservation = reservationRepository.save(newReservation);
         return mapToResponse(savedReservation);
     }
+    public void cancelReservation(Long id, Long userId) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Réservation introuvable"));
+
+        // Sécurité : Seul le propriétaire ou un admin (si on gérait les rôles ici) peut annuler
+        if (!reservation.getUserId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vous n'avez pas le droit d'annuler cette réservation");
+        }
+
+        reservationRepository.deleteById(id);
+    }
 
     public List<ReservationResponse> getReservationsByUserId(Long userId) {
         return reservationRepository.findByUserId(userId)

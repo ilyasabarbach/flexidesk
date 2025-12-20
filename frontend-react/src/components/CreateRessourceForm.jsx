@@ -1,51 +1,100 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ressourceService from "../services/ressourceService";
 
-const CreateRessourceForm = ({ onRessourceCreated }) => {
+// On ajoute deux nouvelles props : editingRessource (l'objet à modifier) et onCancelEdit
+const CreateRessourceForm = ({
+  onRessourceCreated,
+  editingRessource,
+  onCancelEdit,
+}) => {
   const [nom, setNom] = useState("");
   const [type, setType] = useState("BUREAU");
   const [capacite, setCapacite] = useState(1);
   const [error, setError] = useState("");
 
+  // EFFET : Quand on clique sur "Modifier" dans la liste, on remplit le formulaire
+  useEffect(() => {
+    if (editingRessource) {
+      setNom(editingRessource.nom);
+      setType(editingRessource.type);
+      setCapacite(editingRessource.capacite);
+    } else {
+      // Si on n'est plus en édition, on vide
+      setNom("");
+      setType("BUREAU");
+      setCapacite(1);
+    }
+  }, [editingRessource]);
+
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Empêche le rechargement de la page et l'envoi HTML standard
+    e.preventDefault();
     setError("");
 
-    // --- CORRECTION : Création de l'objet JSON ---
     const ressourceData = {
-      nom: nom,
-      type: type,
-      capacite: capacite,
-      disponibilite: true, // On initialise à true par défaut pour la création
+      nom,
+      type,
+      capacite,
+      disponibilite: true, // Par défaut
     };
 
     try {
-      // On envoie l'objet unique au service
-      await ressourceService.createRessource(ressourceData);
+      if (editingRessource) {
+        // --- MODE MODIFICATION ---
+        await ressourceService.updateRessource(
+          editingRessource.id,
+          ressourceData
+        );
+        alert("Ressource modifiée avec succès !");
+      } else {
+        // --- MODE CRÉATION ---
+        await ressourceService.createRessource(ressourceData);
+        alert("Ressource créée avec succès !");
+      }
 
-      alert("Ressource créée avec succès !");
-
-      // Notification du parent pour rafraîchir la liste
+      // On prévient le parent pour rafraîchir la liste et quitter le mode édition
       onRessourceCreated();
 
-      // Réinitialisation du formulaire
+      // Reset du formulaire
       setNom("");
       setType("BUREAU");
       setCapacite(1);
     } catch (err) {
       console.error("Détails de l'erreur :", err);
-      setError("Erreur lors de la création. Vérifiez votre connexion Admin.");
+      setError("Erreur lors de l'opération. Vérifiez vos droits.");
     }
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="p-6 my-4 bg-green-50 border-2 border-green-200 rounded-lg shadow-sm"
+      className={`p-6 my-4 border-2 rounded-lg shadow-sm transition-colors ${
+        editingRessource
+          ? "bg-yellow-50 border-yellow-200" // Couleur Jaune pour Modification
+          : "bg-green-50 border-green-200" // Couleur Verte pour Création
+      }`}
     >
-      <h3 className="text-xl font-semibold text-green-800">
-        Panneau Admin : Créer une Ressource
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3
+          className={`text-xl font-semibold ${
+            editingRessource ? "text-yellow-800" : "text-green-800"
+          }`}
+        >
+          {editingRessource
+            ? `Modifier : ${editingRessource.nom}`
+            : "Panneau Admin : Créer une Ressource"}
+        </h3>
+
+        {/* Bouton Annuler (visible seulement en édition) */}
+        {editingRessource && (
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="text-sm text-gray-500 hover:text-gray-700 underline"
+          >
+            Annuler la modification
+          </button>
+        )}
+      </div>
 
       {error && (
         <div className="p-3 mt-3 text-red-800 bg-red-100 rounded-md">
@@ -68,8 +117,7 @@ const CreateRessourceForm = ({ onRessourceCreated }) => {
             value={nom}
             onChange={(e) => setNom(e.target.value)}
             required
-            placeholder="Ex: Bureau A-101"
-            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
@@ -85,7 +133,7 @@ const CreateRessourceForm = ({ onRessourceCreated }) => {
             id="type"
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="BUREAU">Bureau</option>
             <option value="SALLE_REUNION">Salle de réunion</option>
@@ -108,17 +156,23 @@ const CreateRessourceForm = ({ onRessourceCreated }) => {
             onChange={(e) => setCapacite(parseInt(e.target.value))}
             min="1"
             required
-            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
       </div>
 
-      <div className="mt-6 text-right">
+      <div className="mt-6 text-right space-x-3">
         <button
           type="submit"
-          className="px-6 py-2 font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+          className={`px-6 py-2 font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+            editingRessource
+              ? "bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500"
+              : "bg-green-600 hover:bg-green-700 focus:ring-green-500"
+          }`}
         >
-          Créer la ressource
+          {editingRessource
+            ? "Enregistrer les modifications"
+            : "Créer la ressource"}
         </button>
       </div>
     </form>

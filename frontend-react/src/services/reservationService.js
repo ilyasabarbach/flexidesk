@@ -11,8 +11,12 @@ const createReservation = (ressourceId, dateDebut, dateFin) => {
     dateFin,
   });
 };
+const cancelReservation = (id) => {
+  return apiClient.delete(`/reservations/${id}`);
+};
 
 export default {
   createReservation,
   getMyReservations,
+  cancelReservation,
 };

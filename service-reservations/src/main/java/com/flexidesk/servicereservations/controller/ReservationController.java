@@ -27,6 +27,11 @@ public class ReservationController {
         ReservationResponse response = reservationService.createReservation(request, userId);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelReservation(@PathVariable("id") Long id, @RequestHeader("X-User-Id") Long userId) {
+        reservationService.cancelReservation(id, userId);
+    }
 
 
     @GetMapping("/my-reservations")
