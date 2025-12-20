@@ -1,5 +1,6 @@
 package com.flexidesk.serviceutilisateurs.service;
 
+import com.flexidesk.serviceutilisateurs.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -24,12 +25,17 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public String generateToken(com.flexidesk.serviceutilisateurs.model.User user) {
+    public String generateToken(UserDetails userDetails) {
         Map<String, Object> extraClaims = new HashMap<>();
-        extraClaims.put("userId", user.getId());
-        extraClaims.put("role", user.getRole());
 
-        return generateToken(extraClaims, user);
+        // On vérifie si userDetails est bien notre classe User pour récupérer l'ID
+        if (userDetails instanceof User) {
+            User user = (User) userDetails;
+            extraClaims.put("userId", user.getId()); // AJOUT CRITIQUE
+            extraClaims.put("role", user.getRole());
+        }
+
+        return generateToken(extraClaims, userDetails);
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {

@@ -4,6 +4,7 @@ import com.flexidesk.demo.model.Ressource;
 import com.flexidesk.demo.repository.RessourceRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,15 +28,15 @@ public class RessourceController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
     public Ressource createRessource(@RequestBody Ressource ressource) {
         return ressourceRepository.save(ressource);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Ressource> getRessourceById(@PathVariable Long id) {
-        Optional<Ressource> ressource = ressourceRepository.findById(id);
-
-        return ressource.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    // AJOUTEZ ("id") DANS L'ANNOTATION CI-DESSOUS
+    public Optional<Ressource> getRessourceById(@PathVariable("id") Long id){
+        return ressourceRepository.findById(id);
     }
+
 }

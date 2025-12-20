@@ -46,19 +46,23 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
                 try {
                     jwtUtil.validateToken(token);
-
-                    // 5. EXTRAIRE LES DONNÉES
-                    // Assurez-vous que ces lignes sont bien là !
                     Claims claims = jwtUtil.extractAllClaims(token);
                     Long userId = claims.get("userId", Long.class);
                     String role = claims.get("role", String.class);
 
-                    // 6. Ajouter les en-têtes pour les services en aval
-                    // Assurez-vous que ces lignes sont bien là !
-                    exchange.getRequest()
-                            .mutate()
+                    // --- CORRECTION : On crée une NOUVELLE requête ---
+                    ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
                             .header("X-User-Id", String.valueOf(userId))
-                            .header("X-User-Roles", role);
+                            .header("X-User-Roles", role)
+                            .build();
+
+                    // --- CORRECTION : On crée un NOUVEL échange ---
+                    ServerWebExchange modifiedExchange = exchange.mutate()
+                            .request(modifiedRequest)
+                            .build();
+
+                    // --- CORRECTION : On envoie le NOUVEL échange ---
+                    return chain.filter(modifiedExchange);
 
                 } catch (Exception e) {
                     return onError(exchange, HttpStatus.UNAUTHORIZED);

@@ -2,14 +2,28 @@ import React, { useState } from "react";
 import authService from "../services/authService";
 
 const LoginPage = () => {
-  // Note: Nous avons retiré useNavigate, car window.location.href est plus fiable ici
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
 
+  // NOUVEAU : État pour basculer entre Connexion et Inscription
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+
+  // Fonction de validation simple
+  const validateForm = () => {
+    if (!username.trim() || !password.trim()) {
+      setMessage("Veuillez remplir tous les champs.");
+      setIsError(true);
+      return false;
+    }
+    return true;
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     setMessage("");
     setIsError(false);
 
@@ -17,111 +31,118 @@ const LoginPage = () => {
       const response = await authService.login(username, password);
       if (response.data.token) {
         localStorage.setItem("userToken", response.data.token);
-        window.location.href = "/"; // Redirection
+        window.location.href = "/"; // Redirection vers le Dashboard
       }
     } catch (error) {
-      setMessage("Erreur: Nom d'utilisateur ou mot de passe incorrect.");
+      console.error(error);
+      setMessage("Erreur : Identifiants incorrects.");
       setIsError(true);
     }
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     setMessage("");
     setIsError(false);
 
     try {
       await authService.register(username, password);
-      setMessage(
-        "Inscription réussie ! Vous pouvez maintenant vous connecter."
-      );
+      // SUCCÈS : On repasse en mode connexion et on affiche un message vert
+      setIsRegisterMode(false);
+      setMessage("Compte créé avec succès ! Connectez-vous maintenant.");
+      setIsError(false);
+      // On vide le mot de passe pour sécurité, mais on garde le username
+      setPassword("");
     } catch (error) {
-      setMessage("Erreur: Cet utilisateur existe peut-être déjà.");
+      console.error(error);
+      setMessage("Erreur : Ce nom d'utilisateur est déjà pris.");
       setIsError(true);
     }
   };
 
+  // Fonction pour basculer de mode et nettoyer les messages
+  const toggleMode = () => {
+    setIsRegisterMode(!isRegisterMode);
+    setMessage("");
+    setIsError(false);
+  };
+
   return (
-    // Conteneur principal: centré, fond gris clair
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      {/* La boîte de formulaire */}
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-center text-gray-900">
-          FlexiDesk Connexion
+          FlexiDesk {isRegisterMode ? "Inscription" : "Connexion"}
         </h2>
 
-        {/* Affichage des messages d'erreur ou de succès */}
+        {/* Zone de Message (Erreur ou Succès) */}
         {message && (
           <div
-            className={`p-3 rounded-md text-center ${
+            className={`p-3 rounded-md text-center text-sm ${
               isError
-                ? "bg-red-100 text-red-700"
-                : "bg-green-100 text-green-700"
+                ? "bg-red-100 text-red-700 border border-red-200"
+                : "bg-green-100 text-green-700 border border-green-200"
             }`}
           >
             {message}
           </div>
         )}
 
-        {/* Formulaire */}
-        <form className="space-y-4">
-          {/* Champ Username */}
+        <form
+          className="space-y-4"
+          onSubmit={isRegisterMode ? handleRegister : handleLogin}
+        >
           <div>
-            <label
-              htmlFor="username"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label className="block text-sm font-medium text-gray-700">
               Nom d'utilisateur
             </label>
             <input
-              id="username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              required
-              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Entrez votre identifiant"
             />
           </div>
 
-          {/* Champ Password */}
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label className="block text-sm font-medium text-gray-700">
               Mot de passe
             </label>
             <input
-              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              placeholder="********"
             />
           </div>
 
-          {/* Conteneur pour les boutons */}
-          <div className="flex space-x-4">
-            {/* Bouton Se connecter */}
-            <button
-              type="button"
-              onClick={handleLogin}
-              className="w-full px-4 py-2 font-medium text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Se connecter
-            </button>
-
-            {/* Bouton S'inscrire */}
-            <button
-              type="button"
-              onClick={handleRegister}
-              className="w-full px-4 py-2 font-medium text-blue-700 bg-blue-100 rounded-md shadow-sm hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              S'inscrire
-            </button>
-          </div>
+          {/* Bouton Principal (Change selon le mode) */}
+          <button
+            type="submit" // Type submit active la validation standard si besoin
+            className={`w-full px-4 py-2 font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              isRegisterMode
+                ? "bg-green-600 hover:bg-green-700 focus:ring-green-500"
+                : "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
+            }`}
+          >
+            {isRegisterMode ? "Créer mon compte" : "Se connecter"}
+          </button>
         </form>
+
+        {/* Lien de bascule */}
+        <div className="text-center">
+          <button
+            onClick={toggleMode}
+            className="text-sm text-blue-600 hover:text-blue-500 hover:underline"
+          >
+            {isRegisterMode
+              ? "Déjà un compte ? Se connecter"
+              : "Pas encore de compte ? S'inscrire"}
+          </button>
+        </div>
       </div>
     </div>
   );

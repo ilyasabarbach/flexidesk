@@ -8,24 +8,37 @@ const CreateRessourceForm = ({ onRessourceCreated }) => {
   const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Empêche le rechargement de la page et l'envoi HTML standard
     setError("");
 
+    // --- CORRECTION : Création de l'objet JSON ---
+    const ressourceData = {
+      nom: nom,
+      type: type,
+      capacite: capacite,
+      disponibilite: true, // On initialise à true par défaut pour la création
+    };
+
     try {
-      await ressourceService.createRessource(nom, type, capacite);
-      alert("Ressource créée !");
+      // On envoie l'objet unique au service
+      await ressourceService.createRessource(ressourceData);
+
+      alert("Ressource créée avec succès !");
+
+      // Notification du parent pour rafraîchir la liste
       onRessourceCreated();
+
+      // Réinitialisation du formulaire
       setNom("");
       setType("BUREAU");
       setCapacite(1);
     } catch (err) {
-      console.error(err);
-      setError("Erreur lors de la création. Avez-vous les droits (Admin) ?");
+      console.error("Détails de l'erreur :", err);
+      setError("Erreur lors de la création. Vérifiez votre connexion Admin.");
     }
   };
 
   return (
-    // Formulaire stylisé : fond vert clair, bordure, ombre
     <form
       onSubmit={handleSubmit}
       className="p-6 my-4 bg-green-50 border-2 border-green-200 rounded-lg shadow-sm"
@@ -34,14 +47,12 @@ const CreateRessourceForm = ({ onRessourceCreated }) => {
         Panneau Admin : Créer une Ressource
       </h3>
 
-      {/* Alerte d'erreur */}
       {error && (
         <div className="p-3 mt-3 text-red-800 bg-red-100 rounded-md">
           {error}
         </div>
       )}
 
-      {/* Grille pour les champs du formulaire */}
       <div className="grid grid-cols-1 gap-4 mt-4 md:grid-cols-3">
         {/* Champ Nom */}
         <div>
@@ -57,7 +68,8 @@ const CreateRessourceForm = ({ onRessourceCreated }) => {
             value={nom}
             onChange={(e) => setNom(e.target.value)}
             required
-            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Ex: Bureau A-101"
+            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
           />
         </div>
 
@@ -73,7 +85,7 @@ const CreateRessourceForm = ({ onRessourceCreated }) => {
             id="type"
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
           >
             <option value="BUREAU">Bureau</option>
             <option value="SALLE_REUNION">Salle de réunion</option>
@@ -96,18 +108,17 @@ const CreateRessourceForm = ({ onRessourceCreated }) => {
             onChange={(e) => setCapacite(parseInt(e.target.value))}
             min="1"
             required
-            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
           />
         </div>
       </div>
 
-      {/* Bouton de soumission */}
       <div className="mt-6 text-right">
         <button
           type="submit"
-          className="px-6 py-2 font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          className="px-6 py-2 font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
         >
-          Créer
+          Créer la ressource
         </button>
       </div>
     </form>

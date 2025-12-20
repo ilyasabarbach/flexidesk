@@ -25,10 +25,15 @@ public class JwtHeaderAuthenticationFilter extends OncePerRequestFilter {
         String userId = request.getHeader("X-User-Id");
         String userRoles = request.getHeader("X-User-Roles");
 
+        // --- MOUCHARD DE DEBUG ---
+        System.out.println("🔍 [Ressources] Reçu requête pour: " + request.getRequestURI());
+        System.out.println("   -> Header X-User-Id: " + userId);
+        System.out.println("   -> Header X-User-Roles: " + userRoles);
+        // -------------------------
+
         if (userId != null && userRoles != null) {
             List<GrantedAuthority> authorities =
                     Collections.singletonList(new SimpleGrantedAuthority(userRoles));
-
 
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     userId,
@@ -37,8 +42,12 @@ public class JwtHeaderAuthenticationFilter extends OncePerRequestFilter {
             );
 
             SecurityContextHolder.getContext().setAuthentication(authToken);
+            System.out.println("   ✅ Authentification forcée avec succès : " + userRoles);
+        } else {
+            System.out.println("   ⚠️ Aucune identité trouvée dans les headers (Requête Anonyme)");
         }
 
         filterChain.doFilter(request, response);
     }
+
 }
